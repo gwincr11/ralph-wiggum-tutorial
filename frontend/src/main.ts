@@ -26,6 +26,7 @@ interface IslandModule {
  */
 const islandRegistry: Record<string, () => Promise<IslandModule>> = {
   hello: () => import('./islands/hello'),
+  weather: () => import('./islands/weather'),
 }
 
 /**

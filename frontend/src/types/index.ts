@@ -36,3 +36,23 @@ export interface ApiError {
 export type IslandProps<T = unknown> = {
   initialData?: T
 }
+
+/**
+ * Single weather forecast period from NWS API.
+ */
+export interface WeatherPeriod {
+  name: string
+  temperature: number
+  unit: string
+  shortForecast: string
+  icon: string
+  isDaytime: boolean
+}
+
+/**
+ * Weather forecast data from /api/weather endpoint.
+ */
+export interface WeatherData {
+  current: WeatherPeriod
+  periods: WeatherPeriod[]
+}

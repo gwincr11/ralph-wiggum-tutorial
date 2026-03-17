@@ -32,6 +32,10 @@ def client(app):
 
     Use this fixture to test routes without running a server.
     """
+    # Clear weather cache before each test
+    from app.services import weather_service
+    weather_service._cache.clear()
+
     return app.test_client()
 
 

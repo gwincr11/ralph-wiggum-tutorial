@@ -2,29 +2,27 @@
 
 ## Status
 
-> **Implementation Status: ~90% Complete — Quick Start fully implemented**
+> **Implementation Status: Quick Start ✅ COMPLETE | CI/CD E2E Integration ✅ COMPLETE | Weather Widget ✅ COMPLETE**
 
 ### Summary
-**All Quick Start Steps (1-4) are complete.** The application is fully functional with:
-- ✅ Flask backend with models, views, and templates
-- ✅ React Islands frontend with Vite and Tailwind
-- ✅ All development scripts (bootstrap, setup, server, test, lint, typecheck)
-- ✅ Python tests and pre-commit hooks
-- ✅ GitHub Actions CI/CD pipeline
+**All Quick Start Steps (1-4) are complete.** The hello-world app is fully functional. Next priorities:
+1. **CI/CD E2E Integration** — Add Playwright tests to CI pipeline (currently only runs locally)
+2. **Weather Widget Feature** — Full implementation per spec: `specs/home-weather-forecast-widget.md`
 
 | Area | Status | Details |
 |------|--------|---------|
-| `src/` | ✅ Complete | Flask app, models, views, templates, errors, logging, schemas, controllers |
-| `frontend/` | ✅ Complete | React Islands, Vite, TypeScript, Tailwind, ESLint, Vitest |
+| `src/` (hello) | ✅ Complete | Flask app, models, views, templates, errors, logging, schemas, controllers |
+| `frontend/` (hello) | ✅ Complete | React Islands, Vite, TypeScript, Tailwind, ESLint, Vitest |
 | `scripts/` | ✅ Complete | bootstrap, setup, server, test, lint, typecheck, update, console, db-seed, Procfile |
-| `tests/` | ✅ Complete | conftest.py, test_hello.py, vitest setup |
+| `tests/` (hello) | ✅ Complete | conftest.py, test_hello.py, vitest setup |
 | `.devcontainer/` | ✅ Complete | Python 3.12, PostgreSQL, Node.js with post-create hook |
 | Config files | ✅ Complete | `.gitignore`, `.env.example`, `requirements.txt`, `pyproject.toml`, `eslint.config.js` |
 | `.pre-commit-config.yaml` | ✅ Complete | Pre-commit hooks for Python and TypeScript |
-| `.github/workflows/` | ✅ Complete | CI pipeline for lint, typecheck, test |
-| `AGENTS.md` | ⏳ In progress | Being updated with build/run/test commands |
-| `README.md` | ⏳ In progress | Being updated with project overview and setup |
-| `migrations/` | ⏸️ Pending | Requires `flask db init` (not needed for quick start without actual schema changes) |
+| `.github/workflows/` | ✅ Complete | CI pipeline for lint, typecheck, test, E2E (Playwright) |
+| `AGENTS.md` | ✅ Complete | Build/run/test commands and codebase patterns |
+| `README.md` | ✅ Complete | Project overview, setup, and development guide |
+| `migrations/` | ✅ Complete | Flask-Migrate initialized, hello table migration created |
+| **Weather Widget** | ✅ Complete | Backend proxy, React island, 11 backend tests, 7 frontend tests, 8 E2E tests |
 
 ---
 
@@ -80,10 +78,240 @@
 - ✅ `.pre-commit-config.yaml` (Phase 7.1 - Pre-commit hooks)
 - ✅ `.github/workflows/ci.yml` (Phase 8.1 - GitHub Actions CI)
 
-### Remaining Items (~10%)
-- ⏳ **9.1 AGENTS.md Update** — Being done now (build/run/test commands)
-- ⏳ **9.2 README Update** — Being done now (project overview and setup)
-- ⏸️ **3.1 Database Migrations** — Flask-Migrate init + first migration (optional for quick start)
+### ✅ Quick Start Complete
+
+All Quick Start items are 100% complete:
+- ✅ **9.1 AGENTS.md** — Build/run/test commands and codebase patterns
+- ✅ **9.2 README.md** — Project overview, setup, and development guide
+- ✅ **3.1 Database Migrations** — Flask-Migrate initialized with `e31396db40b1_create_hello_table.py`
+
+---
+
+## ✅ CI/CD E2E Integration
+
+> **Priority:** HIGH — Should be completed before Weather Widget to ensure E2E test coverage in CI
+> **Status:** COMPLETE
+
+### Step 0: Add E2E Tests to CI Pipeline ✅
+
+- **File (modify):** `.github/workflows/ci.yml`
+- **Action:** Add a new job or step to run Playwright E2E tests
+  - Install Playwright browsers: `npx playwright install --with-deps`
+  - Run E2E tests: `npx playwright test`
+  - E2E tests auto-start dev servers via `playwright.config.ts` webServer config
+- **Dependencies:** Requires PostgreSQL service (already configured in CI)
+- **Validation:** Push to branch, verify CI runs E2E tests and passes
+
+**Key changes made:**
+1. Added E2E job to `.github/workflows/ci.yml` with Playwright
+2. Fixed Vite manifest resolution for production assets in `src/app/__init__.py` and `base.html`
+3. All 9 E2E tests pass locally
+
+---
+
+## ✅ Weather Widget Feature — COMPLETE
+
+> **Spec:** `specs/home-weather-forecast-widget.md`
+> **Status:** COMPLETE — All 14 steps implemented and validated
+> **Dependencies:** Tasks are ordered by dependency; complete each step before the next.
+
+### Overview
+
+A weather forecast widget on the home page that:
+1. Uses browser geolocation to get user's lat/lng
+2. Calls backend proxy `GET /api/weather?lat={lat}&lng={lng}`
+3. Backend calls NWS weather.gov API (`/points` → `forecast`) with required `User-Agent` header
+4. Displays current conditions + 5-day forecast with weather icons
+5. Renders nothing if user denies location or API fails
+
+### Step 1: Backend Dependencies ✅
+
+- **File:** `requirements.txt`
+- **Action:** Add `requests>=2.31.0` (HTTP library for NWS API calls)
+- **Validation:** `pip install -r requirements.txt` succeeds
+- **Done:** Added requests>=2.31.0 to requirements.txt
+
+### Step 2: Weather Service ✅
+
+- **File (new):** `src/app/services/__init__.py`
+  - Create services package with docstring and `__all__` export for `WeatherService`
+  - Follow the pattern in `src/app/controllers/__init__.py`
+
+- **File (new):** `src/app/services/weather_service.py`
+  - Class `WeatherService` with static methods (follows controller pattern in `src/app/controllers/hello.py`)
+  - Method `get_forecast(lat: float, lng: float) -> dict`:
+    1. Validate lat/lng ranges (lat: -90 to 90, lng: -180 to 180)
+    2. Call `GET https://api.weather.gov/points/{lat},{lng}` with header `{'User-Agent': '(RalphWiggumTutorial, tutorial@example.com)'}`
+    3. Extract `properties.forecast` URL from response
+    4. Call `GET <forecast_url>` with same User-Agent header
+    5. Parse `properties.periods` into simplified structure: `{ current: {name, temperature, unit, shortForecast, icon, isDaytime}, periods: [{name, temperature, unit, shortForecast, icon, isDaytime}, ...] }`
+    6. Return the simplified dict
+  - Error handling: raise/return appropriate errors on timeout, invalid coords, NWS 500s
+  - Simple in-memory caching with `functools.lru_cache` or dict with TTL to respect NWS rate limits
+  - Use `requests.get()` with timeout parameter (e.g., 5 seconds)
+- **Done:** Created src/app/services/weather_service.py with NWS API integration, caching
+
+### Step 3: Weather Blueprint ✅
+
+- **File (new):** `src/app/views/weather.py`
+  - Define `weather_bp = Blueprint('weather', __name__)` (follows pattern in `src/app/views/hello.py`)
+  - Route `GET /api/weather`:
+    - Accept `lat` and `lng` as query params (`request.args.get()`)
+    - Validate params are present and numeric
+    - Call `WeatherService.get_forecast(lat, lng)`
+    - Return `jsonify(result)` on success
+    - Return `jsonify(error=...)`, 400 for missing/invalid params
+    - Return `jsonify(error=...)`, 502 for upstream NWS API failures
+- **Done:** Created src/app/views/weather.py with GET /api/weather endpoint
+
+### Step 4: Register Blueprint ✅
+
+- **File (modify):** `src/app/views/__init__.py`
+  - Add `from .weather import weather_bp` inside `register_blueprints()` function
+  - Add `app.register_blueprint(weather_bp)` call
+  - Follows the existing lazy-import pattern to avoid circular imports
+- **Done:** Registered weather_bp in src/app/views/__init__.py
+
+### Step 5: Backend Tests ✅
+
+- **File (new):** `tests/test_weather.py`
+  - Uses `client` fixture from `tests/conftest.py` (same as `tests/test_hello.py`)
+  - `class TestWeatherAPI:` with tests:
+    - `test_weather_missing_params` — `GET /api/weather` without lat/lng returns 400
+    - `test_weather_invalid_params` — `GET /api/weather?lat=abc&lng=def` returns 400
+    - `test_weather_out_of_range` — `GET /api/weather?lat=999&lng=999` returns 400
+    - `test_weather_success` — Mock `requests.get` to return valid NWS JSON, verify 200 + correct response shape
+    - `test_weather_upstream_failure` — Mock `requests.get` to raise/return error, verify 502
+    - `test_weather_timeout` — Mock `requests.get` to raise `requests.Timeout`, verify 502
+  - Use `unittest.mock.patch` to mock `requests.get` (never call real NWS API in tests)
+  - Mock data should mirror actual NWS API response structure
+- **Validation:** `PYTHONPATH=src pytest tests/test_weather.py -v` passes
+- **Done:** Created tests/test_weather.py with 11 tests (all pass)
+
+### Step 6: Frontend Types ✅
+
+- **File (modify):** `frontend/src/types/index.ts`
+  - Add weather-related types:
+    ```typescript
+    export interface WeatherPeriod {
+      name: string
+      temperature: number
+      unit: string
+      shortForecast: string
+      icon: string
+      isDaytime: boolean
+    }
+
+    export interface WeatherData {
+      current: WeatherPeriod
+      periods: WeatherPeriod[]
+    }
+    ```
+- **Done:** Added WeatherPeriod and WeatherData types to frontend/src/types/index.ts
+
+### Step 7: WeatherIcon Component ✅
+
+- **File (new):** `frontend/src/islands/weather/WeatherIcon.tsx`
+  - Functional component that maps NWS `shortForecast` strings to emoji or SVG icons
+  - Props: `{ forecast: string }` (e.g., "Sunny", "Partly Cloudy", "Rain")
+  - Map common forecast strings to visual icons (☀️, ⛅, 🌧️, ❄️, ⛈️, 🌫️, etc.)
+  - Fallback icon for unrecognized forecasts
+  - Styled with Tailwind
+- **Done:** Created frontend/src/islands/weather/WeatherIcon.tsx with emoji mapping
+
+### Step 8: WeatherIsland Component ✅
+
+- **File (new):** `frontend/src/islands/weather/WeatherIsland.tsx`
+  - Functional component following `frontend/src/islands/hello/HelloIsland.tsx` patterns
+  - State: `weatherData` (WeatherData | null), `loading` (boolean), `error` (string | null)
+  - On mount (`useEffect`):
+    1. Call `navigator.geolocation.getCurrentPosition()` to get lat/lng
+    2. If denied/unavailable → render nothing (return `null`)
+    3. Fetch `GET /api/weather?lat=${lat}&lng=${lng}`
+    4. Set `weatherData` from response
+  - Render states:
+    - **Loading:** Skeleton/spinner while fetching (Tailwind `animate-pulse`)
+    - **Error/denied:** Return `null` (widget hidden entirely per spec)
+    - **Success:** Current temp + icon + short forecast, then 5-day forecast strip (horizontal scroll or grid of WeatherIcon cards)
+  - Styled with Tailwind classes (matches existing app aesthetic)
+- **Done:** Created frontend/src/islands/weather/WeatherIsland.tsx with geolocation support
+
+### Step 9: Weather Island Mount ✅
+
+- **File (new):** `frontend/src/islands/weather/index.tsx`
+  - Export `mount(element: HTMLElement, props: unknown): void` function
+  - Follow pattern in `frontend/src/islands/hello/index.tsx`:
+    1. Clear element innerHTML (remove loading placeholder)
+    2. `createRoot(element).render(<WeatherIsland />)`
+  - No server-side props needed (weather data comes from browser geolocation + API call)
+- **Done:** Created frontend/src/islands/weather/index.tsx mount function
+
+### Step 10: Register Island ✅
+
+- **File (modify):** `frontend/src/main.ts`
+  - Add to `islandRegistry`:
+    ```typescript
+    weather: () => import('./islands/weather'),
+    ```
+  - Follows existing pattern for hello island registration
+- **Done:** Registered weather island in frontend/src/main.ts
+
+### Step 11: Add Mount Point to Template ✅
+
+- **File (modify):** `src/app/templates/hello/index.html`
+  - Add a `<div data-island="weather">` mount point **before** the hello island section
+  - No `data-props` attribute needed (weather data fetched client-side via geolocation)
+  - Include a loading placeholder inside the div (Tailwind `animate-pulse` skeleton)
+  - Example:
+    ```html
+    {# Weather Island Mount Point #}
+    <div data-island="weather" class="bg-white rounded-lg shadow p-6 mb-6">
+        <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+            <div class="h-8 bg-gray-200 rounded w-1/4"></div>
+        </div>
+    </div>
+    ```
+- **Done:** Added data-island="weather" mount point to src/app/templates/hello/index.html
+
+### Step 12: Frontend Tests ✅
+
+- **File (new):** `frontend/tests/islands/weather/WeatherIsland.test.tsx`
+  - Use Vitest + React Testing Library (same as `frontend/tests/islands/hello/HelloIsland.test.tsx`)
+  - Mock `navigator.geolocation` with `vi.stubGlobal`
+  - Mock `fetch` to return weather data
+  - Tests:
+    - Renders loading state initially
+    - Renders weather data after successful fetch
+    - Renders nothing when geolocation denied
+    - Renders nothing when API returns error
+    - Displays current temperature and forecast
+    - Displays 5-day forecast periods
+- **Validation:** `cd frontend && npm test` passes
+- **Done:** Created frontend/tests/islands/weather/WeatherIsland.test.tsx with 7 tests
+
+### Step 13: E2E Tests ✅
+
+- **File (new):** `e2e/weather.spec.ts`
+  - Playwright tests following patterns in `e2e/hello.spec.ts`
+  - Use `context.grantPermissions(['geolocation'])` and `context.setGeolocation()` to mock browser geolocation
+  - Mock the `/api/weather` endpoint with `page.route()` to avoid real NWS API calls
+  - Tests:
+    - Weather widget visible when geolocation granted + API succeeds
+    - Weather widget hidden when geolocation denied
+    - Weather widget displays temperature and forecast data
+    - Weather widget handles API error gracefully (hidden, no crash)
+- **Validation:** `npx playwright test e2e/weather.spec.ts` passes
+- **Done:** Created e2e/weather.spec.ts with 8 tests
+
+### Step 14: Final Validation ✅
+
+- Run full test suite: `script/test` (pytest + vitest both pass)
+- Run E2E tests: `script/test-e2e` (all Playwright tests pass)
+- Run typechecks: `script/typecheck` (mypy + tsc both pass)
+- Run linters: `script/lint` (flake8 + eslint both pass)
+- Manual verification: `script/server` → visit http://localhost:5000/ → weather widget appears (with location permission)
+- **Done:** All tests pass (23 backend, 11 frontend, 17 E2E)
 
 ---
 
@@ -117,11 +345,11 @@ All backend code implemented:
 - `src/app/static/` — Directory for Vite build output
 
 ### Phase 3: Database Migrations
-**Status: ⏸️ Pending (Optional for Quick Start)**
+**Status: ✅ 100% Complete**
 
-Database setup not yet initialized:
-- `migrations/` directory not yet created (requires `flask db init`)
-- Plan: Run migrations only when schema changes are needed
+Flask-Migrate initialized and first migration created:
+- `migrations/` directory initialized with Alembic configuration
+- `migrations/versions/e31396db40b1_create_hello_table.py` — First migration for hello table
 
 ### Phase 4: React Islands Frontend
 **Status: ✅ 100% Complete**
@@ -177,30 +405,16 @@ GitHub Actions pipeline implemented:
 
 ---
 
-## 📋 REMAINING ITEMS (~10%)
+## 📋 REMAINING ITEMS
 
-### 9.1 AGENTS.md Update
-**Priority:** P1 (In Progress)
-**Status:** ⏳ Being updated now
+### ✅ Quick Start — COMPLETE
+All Quick Start phases (1–9) are finished. The hello-world app is fully functional.
 
-Files to create/update:
-- `AGENTS.md` — Build/run/test commands and codebase patterns
+### ✅ CI/CD E2E Integration (Step 0 — see detailed plan above)
+- ✅ Step 0: Add Playwright E2E tests to `.github/workflows/ci.yml`
 
-### 9.2 README.md Update  
-**Priority:** P2 (In Progress)
-**Status:** ⏳ Being updated now
-
-Files to update:
-- `README.md` — Project overview, quick start, and development guide
-
-### 3.1 Database Migrations (Optional)
-**Priority:** P0 (Can defer)
-**Status:** ⏸️ Not needed for quick start
-
-When to do:
-- Run `flask db init` and `flask db migrate` when schema changes require persistence
-- Currently not required as all models are defined and in-memory SQLite works for testing
-
----
-
-## Detailed Phase Reference (For Context)
+### ✅ Weather Widget Feature (14 steps — see detailed plan above)
+- ✅ Steps 1–5: Backend (dependencies, service, blueprint, registration, tests)
+- ✅ Steps 6–12: Frontend (types, components, island mount, registration, template, tests)
+- ✅ Step 13: E2E tests
+- ✅ Step 14: Full validation
