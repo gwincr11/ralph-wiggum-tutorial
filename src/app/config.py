@@ -19,6 +19,9 @@ class Config:
     # Vite dev server URL for template asset loading
     VITE_DEV_SERVER = os.environ.get('VITE_DEV_SERVER', 'http://localhost:5173')
 
+    # Hugging Face API token for comic generation
+    HF_API_TOKEN = os.environ.get('HF_API_TOKEN')
+
 
 class DevelopmentConfig(Config):
     """Development configuration with debug enabled."""

@@ -15,7 +15,7 @@ addopts = "-v --tb=short"
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
-exclude = ["venv", ".venv", "migrations"]
+exclude = ["venv", ".venv", "migrations", "tests"]
 
 [tool.flake8]
 max-line-length = 120

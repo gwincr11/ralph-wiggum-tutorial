@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Comic Generator - Ralph Wiggum Tutorial{% endblock %}
+
+{% block content %}
+<main class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8 text-gray-800">Comic Generator</h1>
+
+    {# React Island Mount Point #}
+    {# The frontend JavaScript finds this element and mounts the ComicGenerator component #}
+    <div
+        data-island="comic-generator"
+        data-props='{}'
+        class="bg-white rounded-lg shadow p-6"
+    >
+        {# Server-rendered fallback content #}
+        <noscript>
+            <p class="text-gray-600 mb-4">JavaScript is required for the Comic Generator.</p>
+        </noscript>
+
+        {# Initial loading skeleton #}
+        <div class="animate-pulse space-y-4">
+            <div class="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+            <div class="h-24 bg-gray-200 rounded mb-4"></div>
+            <div class="h-10 bg-gray-200 rounded w-32"></div>
+
+            {# Panel placeholders #}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                <div class="bg-gray-200 rounded h-48"></div>
+                <div class="bg-gray-200 rounded h-48"></div>
+                <div class="bg-gray-200 rounded h-48"></div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
