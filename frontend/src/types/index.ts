@@ -1,6 +1,6 @@
 /**
  * Shared TypeScript types for the application.
- * 
+ *
  * These types are used across islands, components, and API interactions.
  */
 
@@ -35,4 +35,24 @@ export interface ApiError {
  */
 export type IslandProps<T = unknown> = {
   initialData?: T
+}
+
+/**
+ * A single weather forecast period from NWS API.
+ */
+export interface WeatherPeriod {
+  name: string
+  temperature: number
+  unit: string
+  shortForecast: string
+  icon: string
+  isDaytime: boolean
+}
+
+/**
+ * Complete weather data with current conditions and forecast.
+ */
+export interface WeatherData {
+  current: WeatherPeriod
+  periods: WeatherPeriod[]
 }

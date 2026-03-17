@@ -5,12 +5,29 @@
 {% block content %}
 <main class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-8 text-gray-800">Hello World</h1>
-    
+
+    {# Weather Island Mount Point #}
+    {# Fetches location via browser geolocation and weather data from /api/weather #}
+    {# Renders nothing if location denied or API fails #}
+    <div data-island="weather">
+        {# Loading placeholder - replaced by React component #}
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div class="animate-pulse">
+                <div class="h-4 bg-gray-200 rounded w-1/3 mb-3"></div>
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="h-12 w-12 bg-gray-200 rounded-full"></div>
+                    <div class="h-10 bg-gray-200 rounded w-24"></div>
+                </div>
+                <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+            </div>
+        </div>
+    </div>
+
     {# React Island Mount Point #}
     {# The frontend JavaScript finds this element and mounts the HelloIsland component #}
     {# data-props passes initial data from the server to avoid a loading state #}
-    <div 
-        data-island="hello" 
+    <div
+        data-island="hello"
         data-props='{{ hellos | tojson | safe }}'
         class="bg-white rounded-lg shadow p-6"
     >
@@ -19,14 +36,14 @@
         <noscript>
             <p class="text-gray-600 mb-4">JavaScript is required for interactive features.</p>
         </noscript>
-        
+
         {# Initial loading state #}
         <div class="animate-pulse">
             <div class="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
             <div class="h-4 bg-gray-200 rounded w-1/2"></div>
         </div>
     </div>
-    
+
     {# Server-rendered list as fallback #}
     <section class="mt-8">
         <h2 class="text-xl font-semibold mb-4 text-gray-700">Messages (Server Rendered)</h2>
