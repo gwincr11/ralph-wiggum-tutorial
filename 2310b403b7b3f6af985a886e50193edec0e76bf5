@@ -1,0 +1,46 @@
+Space Invaders implementation — design rationale & decisions
+
+WHY this approach
+- Engine is pure TypeScript (no React) so it is unit-testable and portable;
+  React only appears in the thin GameIsland wrapper that binds engine
+  start()/destroy() to component mount/unmount (prevents RAF + key-listener
+  leaks across HMR/navigation).
+- Updates are delta-time based (px/second), with the loop clamping dt to
+  0.05s. This makes motion identical at 30/60/144Hz and prevents a huge
+  position jump after the tab is backgrounded.
+- Bullet uses the SIGN of its speed as its direction (no subclass / flag):
+  negative = player (up), positive = alien (down). One class, two roles.
+- AlienGrid owns all movement so the swarm marches in lock-step and reverses
+  + descends the instant ANY living alien touches an edge (apply-then-correct
+  overflow keeps it on-canvas at both edges). March speed scales with kills to
+  mirror the arcade's rising tension. Only the frontmost alien per column may
+  fire (can't shoot through the one below).
+- InputHandler keeps a held-key Set for per-frame polling, plus an
+  edge-triggered consumeStart() so a single Space press starts/restarts
+  without auto-repeat skipping screens.
+- Player.shoot() is cooldown rate-limited so holding Space can't emit a bullet
+  every frame; dead bullets are pruned each frame to avoid unbounded growth.
+
+TESTING — why it matters
+- Canvas pixels are opaque to unit tests, so vitest targets pure logic: bounds
+  clamping, off-screen bullet pruning (memory-leak guard), swarm reversal/
+  descent, bottom-of-column firing, and the SpaceInvaders state machine
+  (start->playing->won/gameover->restart) via a stubbed 2D context. E2E
+  (Playwright) covers the visual/integration gap: canvas mounts at 800x600,
+  input raises no console errors, and the canvas pixels change when the game
+  starts.
+
+GOTCHAS recorded for future loops
+- Run Playwright with --reporter=list in agent/CI shells; the default html
+  reporter opens a blocking report server (caused an initial hang).
+- npx playwright install chromium is required once in a fresh environment.
+- vite build (emptyOutDir) wipes src/app/static and removes .gitkeep; restore
+  it. Built assets are gitignored.
+- ESLint flat config lacks DOM type globals -> avoid `as EventListener` casts;
+  type handlers as (e: Event) and narrow.
+- Pre-commit mypy/flake8 pass explicit filenames, bypassing the migrations
+  exclude in pyproject/setup.cfg; added matching `exclude: ^migrations/` to the
+  hooks (single source of truth: project already excludes migrations).
+- Strict mypy: test client param typed `FlaskClient[Any]` needs
+  `from __future__ import annotations` so the subscript isn't evaluated at
+  runtime (FlaskClient isn't subscriptable at runtime).
