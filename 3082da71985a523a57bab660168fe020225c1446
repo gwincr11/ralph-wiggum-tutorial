@@ -1,0 +1,13 @@
+## AI Agent Reasoning
+
+### Context
+Reviewed and refined the implementation plan for the new Comic Strip Generator feature.
+Also archived the initial project setup specification (starter.md) to keep the `specs/` directory clean.
+
+### Decisions Made
+- **Archive starter.md**: Moved the initial setup spec to `old-spec/` as it represents completed/past work, ensuring active specs are easily identifiable.
+- **Update plan detail**: Enhanced the Comic Generator plan with specific schema definitions, service/controller separation, and robust error handling requirements to guide implementation.
+- **Testing strategy**: Explicitly required mocking the HF API in E2E tests to prevent flakiness and external dependencies in CI.
+
+### References
+- Spec: specs/issue-comic-generator-sdlc_planner-add-comic-system.md

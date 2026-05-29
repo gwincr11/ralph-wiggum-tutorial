@@ -1,0 +1,14 @@
+## AI Agent Reasoning
+
+### Context
+User reported model not supported errors with Zephyr-7b-beta and Phi-3.5 on the free Hugging Face Inference API. Additionally, image generation failed with Stable Diffusion v1.5.
+
+### Decisions Made
+- **LLM Selection**: Switched to **Qwen/Qwen2.5-7B-Instruct** after verifying it works on the free tier via a test script. Zephyr, Phi-3.5, and Gemma-2 were either unsupported or rate-limited.
+- **Image Model**: Switched to **black-forest-labs/FLUX.1-schnell** as Stable Diffusion v1.5 and 2.1 were unavailable/erroring on the free tier.
+- **API Method**: Standardized on `client.chat_completion` for modern LLM interaction.
+
+### Fixes
+- Added `PYTHONPATH=src` to `script/test` to resolve ModuleNotFoundError.
+- Added `src/__init__.py` to make the source directory a proper package.
+- Fixed mypy type errors in `hello.py` and `comic_service.py`.

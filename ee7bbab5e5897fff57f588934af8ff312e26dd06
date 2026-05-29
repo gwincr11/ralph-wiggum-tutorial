@@ -1,0 +1,28 @@
+Weather Widget Implementation Notes
+
+## Why
+The weather widget provides personalized, location-aware content that enhances
+user engagement. Per spec (specs/home-weather-forecast-widget.md), the widget
+should use browser geolocation and display current weather + 5-day forecast.
+
+## Architecture Decision: Backend Proxy
+Used a backend proxy pattern because:
+1. NWS API requires custom User-Agent header - blocked by browsers on CORS
+2. Enables server-side caching (5-min TTL) to respect NWS rate limits
+3. Centralizes error handling and validation
+
+## Key Implementation Details
+- WeatherService: Stateless class with classmethod pattern (matches HelloController)
+- Caching: Dict-based cache with TTL vs lru_cache (needed TTL expiration)
+- Error Handling: Custom exceptions (InvalidCoordinatesError, UpstreamAPIError)
+- Frontend State Machine: loading -> success/error/denied states
+- Rendering: Returns null for error/denied states (per spec: widget hidden)
+
+## Testing Strategy
+- Backend: 18 tests with mocked requests.get (never hit real NWS API)
+- Frontend: 7 tests with mocked geolocation and fetch
+- E2E: 10 tests using Playwright's grantPermissions and page.route()
+
+## CI/CD Integration
+Added separate 'e2e' job to CI workflow to keep test jobs independent.
+E2E job installs Playwright browsers and runs migrations before tests.
